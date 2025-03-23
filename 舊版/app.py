@@ -11,11 +11,11 @@ chat_memory = {}  # 儲存不同使用者的對話記憶
 # 資料庫設定
 db_config = {
     'user': 'avnadmin',
-    'password': 'AVNS_o9J03zdrjmoa92N5d5W',
+    'password': 'password(隱藏)',
     'host': 'mysql-24c33585-leowubot001-9e7a.h.aivencloud.com',
     'port': 24156,
     'database': 'defaultdb',
-    'ssl_ca': r'C:\Users\leowu\Desktop\web talk\學習歷程\certificates\ca.pem',  # 替換為您的 CA 證書路徑
+    'ssl_ca': r'C:\Users\leowu\Desktop\web talk\學習歷程\certificates\ca.pem',  #CA 證書路徑
     'ssl_disabled': False
 }
 
