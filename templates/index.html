@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 學習歷程 / 對話模式</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background-color: #f0f4f8;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    h2 {
+      margin: 20px;
+      font-size: 24px;
+      color: #4CAF50;
+    }
+
+    #chat-box { 
+      width: 60%; 
+      margin: 20px auto; 
+      padding: 20px; 
+      border: 1px solid #ccc; 
+      border-radius: 10px;
+      height: 400px; 
+      overflow-y: auto; 
+      text-align: left; 
+      background: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    input, button, select { 
+      padding: 12px; 
+      margin: 8px 0; 
+      width: 80%; 
+      border-radius: 5px; 
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    button { 
+      background-color: #4CAF50; 
+      color: white;
+      border: none; 
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover { 
+      background-color: #45a049; 
+    }
+
+    .user { 
+      font-weight: bold; 
+      color: #007BFF; 
+    }
+
+    .ai { 
+      font-weight: bold; 
+      color: #28a745; 
+    }
+
+    select { 
+      font-size: 16px; 
+    }
+
+    .chat-message {
+      margin: 10px 0;
+    }
+
+    .chat-message p {
+      margin: 5px 0;
+    }
+
+    .chat-message .user,
+    .chat-message .ai {
+      display: inline-block;
+      max-width: 85%;
+      word-wrap: break-word;
+    }
+
+    .chat-message .user {
+      background-color: #e7f3fe;
+      padding: 8px;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    .chat-message .ai {
+      background-color: #e9f7e2;
+      padding: 8px;
+      border-radius: 5px;
+      margin-left: 10px;
+    }
+
+    .clear-button {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .clear-button:hover { 
+      background-color: #e53935; 
+    }
+  </style>
+</head>
+<body>
+  <h2>AI 學習歷程 / 對話模式</h2>
+  <input type="text" id="api-key" placeholder="請輸入 API Key" value="AIzaSyBk6I0lAinukCQD_ZjGNH5GwjfFvKFdxGk">
+  <input type="text" id="user-id" placeholder="請輸入使用者 ID (如 Email 或暱稱)">
+  <select id="mode">
+    <option value="learning">學習歷程模式</option>
+    <option value="chat">對話模式</option>
+  </select>
+  <input type="text" id="topic" placeholder="輸入學習主題或對話內容...">
+  <button onclick="sendMessage()">送出</button>
+  <button class="clear-button" onclick="clearMemory()">清除記憶</button>
+  <div id="chat-box"></div>
+
+  <script>
+    function sendMessage() {
+  const apiKey = document.getElementById("api-key").value;
+  const userId = document.getElementById("user-id").value;
+  const topic = document.getElementById("topic").value.trim();
+  const mode = document.getElementById("mode").value;
+  const chatBox = document.getElementById("chat-box");
+
+  if (!apiKey || !userId || !topic) {
+    alert("請輸入 API Key、使用者 ID 和內容！");
+    return;
+  }
+
+  // 🔹 顯示使用者輸入
+  chatBox.innerHTML += `<div class="chat-message"><p class="user"><b>你：</b> ${topic}</p></div>`;
+
+  // 🔹 若輸入 `/save`，則執行儲存請求
+  if (topic === "/save") {
+    fetch("/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+      // 確保 `data.message` 存在，否則顯示預設文字
+      const saveMessage = data.message && data.message.trim() ? data.message : "✅ 學習歷程已成功儲存！";
+      chatBox.innerHTML += `<div class="chat-message"><p class="ai"><b>AI：</b> ${saveMessage}</p></div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(error => {
+      chatBox.innerHTML += `<div class="chat-message"><p class="ai" style="color: red;"><b>AI：</b> ❌ 儲存失敗，請稍後再試</p></div>`;
+      console.error("錯誤:", error);
+    });
+
+    return;  // `/save` 指令處理完成後結束函式
+  }
+
+  // 🔹 一般對話請求
+  fetch("/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ api_key: apiKey, topic: topic, user_id: userId, mode: mode })
+  })
+  .then(response => response.json())
+  .then(data => {
+    // 確保回應不會是空白
+    const reply = data.reply && data.reply.trim() ? data.reply : "❌ 無法取得 AI 回應";
+    const formattedReply = marked.parse(reply) || reply;
+
+    chatBox.innerHTML += `<div class="chat-message"><p class="ai"><b>AI：</b> ${formattedReply}</p></div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+  })
+  .catch(error => {
+    chatBox.innerHTML += `<div class="chat-message"><p class="ai" style="color: red;"><b>AI：</b> ❌ 無法連接伺服器</p></div>`;
+    console.error("錯誤:", error);
+  });
+}
+
+
+
+
+    function clearMemory() {
+      const userId = document.getElementById("user-id").value;
+      if (!userId) {
+        alert("請輸入使用者 ID 才能清除記憶！");
+        return;
+      }
+
+      fetch("/clear_memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId })
+      }).then(() => {
+        document.getElementById("chat-box").innerHTML = "<p style='color: gray;'>記憶已清除。</p>";
+      });
+    }
+  </script>
+</body>
+</html>
